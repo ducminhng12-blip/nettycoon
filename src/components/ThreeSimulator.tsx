@@ -1992,23 +1992,24 @@ export const ThreeSimulator: React.FC<ThreeSimulatorProps> = ({
     rendererRef.current = renderer;
 
     // --- CINEMATIC ATMOSPHERIC LIGHTING ---
-    // 1. Global Ambient Light (dark grey/blueish, intensity: 1.0) as requested
-    const globalAmbient = new THREE.AmbientLight(0x6b7c96, 1.0);
+    // 1. Global Ambient Light (dark grey/blueish, intensity: 0.9)
+    const globalAmbient = new THREE.AmbientLight(0x788ba3, 0.9);
     scene.add(globalAmbient);
 
-    // 2. Directional Light pointing downwards with low intensity to illuminate the floor
-    const floorDirLight = new THREE.DirectionalLight(0xcfd8dc, 0.65);
-    floorDirLight.position.set(0, 8, -0.5);
-    floorDirLight.target.position.set(0, 0, -0.5);
-    scene.add(floorDirLight);
-    scene.add(floorDirLight.target);
+    // 2. ONE Single Main Directional Light for the entire scene (Optimal 60 FPS performance)
+    const mainDirLight = new THREE.DirectionalLight(0xdfe7f2, 0.95);
+    mainDirLight.position.set(3, 10, 2);
+    mainDirLight.target.position.set(0, 0, 0);
+    mainDirLight.castShadow = false; // Prevent heavy shadow map recalculations
+    scene.add(mainDirLight);
+    scene.add(mainDirLight.target);
 
     // 3. Subtle Hemisphere Light for environmental fill
     const hemiLight = new THREE.HemisphereLight(0x8fa3bf, 0x334155, 0.45);
     scene.add(hemiLight);
 
     // Parallel Dual Neon Ceiling Strips (Straight down the central aisle)
-    // Left: Electric Cyan/Blue neon strip (running z: -5.5 to 5.0 at x: -0.6, y: 3.65)
+    // Left: Electric Cyan/Blue neon strip (MeshBasicMaterial is self-luminous with ZERO dynamic light overhead)
     const neonBlueGeo = new THREE.CylinderGeometry(0.03, 0.03, 10.5, 12);
     const neonBlueMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
     const neonBlueStrip = new THREE.Mesh(neonBlueGeo, neonBlueMat);
@@ -2016,30 +2017,13 @@ export const ThreeSimulator: React.FC<ThreeSimulatorProps> = ({
     neonBlueStrip.position.set(-0.6, 3.65, -0.25);
     scene.add(neonBlueStrip);
 
-    // Right: Ultraviolet Purple/Magenta neon strip (running z: -5.5 to 5.0 at x: 0.6, y: 3.65)
+    // Right: Ultraviolet Purple/Magenta neon strip
     const neonPurpleGeo = new THREE.CylinderGeometry(0.03, 0.03, 10.5, 12);
     const neonPurpleMat = new THREE.MeshBasicMaterial({ color: 0xd946ef });
     const neonPurpleStrip = new THREE.Mesh(neonPurpleGeo, neonPurpleMat);
     neonPurpleStrip.rotation.x = Math.PI / 2;
     neonPurpleStrip.position.set(0.6, 3.65, -0.25);
     scene.add(neonPurpleStrip);
-
-    // Neon wash lights along central aisle
-    const neonLight1 = new THREE.PointLight(0x00f0ff, 1.4, 9);
-    neonLight1.position.set(-0.6, 3.4, -2.5);
-    scene.add(neonLight1);
-
-    const neonLight2 = new THREE.PointLight(0xd946ef, 1.4, 9);
-    neonLight2.position.set(0.6, 3.4, -0.5);
-    scene.add(neonLight2);
-
-    const neonLight3 = new THREE.PointLight(0x00f0ff, 1.4, 9);
-    neonLight3.position.set(-0.6, 3.4, 1.8);
-    scene.add(neonLight3);
-
-    const neonLight4 = new THREE.PointLight(0xd946ef, 1.4, 9);
-    neonLight4.position.set(0.6, 3.4, 3.8);
-    scene.add(neonLight4);
 
     // --- REALISTIC POLISHED TILED / EPOXY GAMING FLOOR (Visible dark-grey PBR) ---
     const createFloorCanvasTexture = () => {
@@ -2277,16 +2261,11 @@ export const ThreeSimulator: React.FC<ThreeSimulatorProps> = ({
       panelMesh.position.set(0.03, 0, pZ);
       leftWallGroup.add(panelMesh);
 
-      // Inset vertical LED strip light between panels
+      // Inset vertical LED strip light between panels (Emissive/Basic styling, zero dynamic light)
       const vNeonMat = new THREE.MeshBasicMaterial({ color: neonVerticalColors[pIdx] });
       const vNeonMesh = new THREE.Mesh(new THREE.BoxGeometry(0.03, 3.2, 0.04), vNeonMat);
       vNeonMesh.position.set(0.07, 0, pZ + 0.95);
       leftWallGroup.add(vNeonMesh);
-
-      // Soft vertical neon light wash
-      const vNeonLight = new THREE.PointLight(neonVerticalColors[pIdx], 0.65, 4.2);
-      vNeonLight.position.set(0.2, 0, pZ + 0.95);
-      leftWallGroup.add(vNeonLight);
     }
 
     // Industrial Conduits & Electrical Wall Boxes on Left Wall
@@ -2473,10 +2452,6 @@ export const ThreeSimulator: React.FC<ThreeSimulatorProps> = ({
       spotHousing.position.set(pos.x + 0.16, pos.y + 0.95, pos.z);
       spotHousing.rotation.z = Math.PI / 4;
       scene.add(spotHousing);
-
-      const spotLight = new THREE.PointLight(0xfff7ed, 0.85, 3.2);
-      spotLight.position.set(pos.x + 0.24, pos.y + 0.85, pos.z);
-      scene.add(spotLight);
 
       scene.add(frameMesh);
       scene.add(posterMesh);
@@ -2897,10 +2872,7 @@ export const ThreeSimulator: React.FC<ThreeSimulatorProps> = ({
     cyberSignMesh.position.set(0, 1.25, 0.08);
     backWallGroup.add(cyberSignMesh);
 
-    const cyberSignLight = new THREE.PointLight(0x00f0ff, 1.1, 5.0);
-    cyberSignLight.position.set(0, 1.2, 0.3);
-    backWallGroup.add(cyberSignLight);
-
+    // Cyber sign mesh is self-illuminated via MeshBasicMaterial
     scene.add(backWallGroup);
 
     // 2. Far End Service Counter (Quầy Thu Ngân)
@@ -3004,11 +2976,6 @@ export const ThreeSimulator: React.FC<ThreeSimulatorProps> = ({
     qrStand.position.set(-0.55, 1.20, 0.28);
     qrStand.rotation.x = -0.15;
     counterGroup.add(qrStand);
-
-    // Warm Counter Task Light
-    const counterLight = new THREE.PointLight(0xffedd5, 1.0, 4.0);
-    counterLight.position.set(0, 2.1, 0);
-    counterGroup.add(counterLight);
 
     scene.add(counterGroup);
 
@@ -3140,31 +3107,31 @@ export const ThreeSimulator: React.FC<ThreeSimulatorProps> = ({
     coolerHeader.position.set(0, 2.12, 0.365);
     coolerGroup.add(coolerHeader);
 
-    // Front Face Transparent Glass PBR Material (albedo alpha < 0.3, smoothness = 0.9 / roughness = 0.1)
-    const coolerGlassMat = new THREE.MeshPhysicalMaterial({
+    // Front Face Transparent Glass Material (Optimized: depthWrite = false, Standard Material)
+    const coolerGlassMat = new THREE.MeshStandardMaterial({
       color: 0xbae6fd,
       transparent: true,
-      opacity: 0.22, // albedo alpha < 0.3
-      roughness: 0.10, // smoothness = 0.9
-      metalness: 0.05,
-      transmission: 0.88,
-      ior: 1.45,
-      reflectivity: 0.85,
+      opacity: 0.22,
+      roughness: 0.2,
+      metalness: 0.1,
+      depthWrite: false,
     });
     const coolerGlass = new THREE.Mesh(new THREE.PlaneGeometry(1.24, 1.76), coolerGlassMat);
     coolerGlass.position.set(0, 1.10, 0.365);
+    coolerGlass.castShadow = false;
+    coolerGlass.receiveShadow = false;
     coolerGroup.add(coolerGlass);
 
-    // Inner White/Blue Emissive LED Strip Lighting
+    // Inner White/Blue Emissive LED Strip Lighting (Emissive with zero dynamic light cost)
     const coolerBlueLedMat = new THREE.MeshStandardMaterial({
       color: 0x38bdf8,
       emissive: 0x38bdf8,
-      emissiveIntensity: 2.8,
+      emissiveIntensity: 2.5,
     });
     const coolerWhiteLedMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xffffff,
-      emissiveIntensity: 2.4,
+      emissiveIntensity: 2.0,
     });
 
     // Vertical left & right LED strips inside fridge door frame
@@ -3187,90 +3154,77 @@ export const ThreeSimulator: React.FC<ThreeSimulatorProps> = ({
     coolerHandle.position.set(-0.52, 1.1, 0.39);
     coolerGroup.add(coolerHandle);
 
-    // Bright Interior Cold LED Lights
-    const coolerInteriorLight1 = new THREE.PointLight(0xffffff, 1.8, 3.5);
-    coolerInteriorLight1.position.set(0, 1.5, 0.05);
-    coolerGroup.add(coolerInteriorLight1);
-
-    const coolerInteriorLight2 = new THREE.PointLight(0x38bdf8, 1.2, 3.5);
-    coolerInteriorLight2.position.set(0, 0.8, 0.05);
-    coolerGroup.add(coolerInteriorLight2);
-
-    // 4 Shelves inside Refrigerator with drinks & snacks inventory placeholders
-    const drinkColors = [
-      0xef4444, // Sting Dâu (Red)
-      0xeab308, // Sting Vàng / Red Bull (Gold)
-      0x10b981, // Monster Energy (Green)
-      0x3b82f6, // Pepsi / Pocari (Blue)
-      0x0284c7, // Aquafina (Sky Blue)
-    ];
-
-    const snackBoxColors = [
-      0xec4899, // Hảo Hảo chua cay (Pink/Red box)
-      0x1e293b, // Omachi xốt bò (Black box)
-      0x10b981, // Indomie Mi Goreng (Green box)
-      0xf59e0b, // Snack Khoai Tây / Lay's (Yellow box)
-    ];
-
-    [0.42, 0.82, 1.22, 1.62].forEach((dy, shelfIdx) => {
-      // Wire shelf with blue emissive front trim
+    // Wire Shelves inside Refrigerator
+    [0.42, 0.82, 1.22, 1.62].forEach((dy) => {
       const wireShelf = new THREE.Mesh(new THREE.BoxGeometry(1.22, 0.02, 0.58), steelMat);
       wireShelf.position.set(0, dy, 0);
+      wireShelf.castShadow = false;
+      wireShelf.receiveShadow = false;
       coolerGroup.add(wireShelf);
 
       const shelfTrimLed = new THREE.Mesh(new THREE.BoxGeometry(1.22, 0.012, 0.015), coolerBlueLedMat);
       shelfTrimLed.position.set(0, dy, 0.29);
       coolerGroup.add(shelfTrimLed);
+    });
 
-      if (shelfIdx >= 2) {
-        // Top 2 shelves: Colorful drink cylinders (Energy drinks/sodas)
-        for (let rx = -0.48; rx <= 0.48; rx += 0.16) {
-          const dColor = drinkColors[Math.floor(Math.abs(rx * 6 + dy * 3)) % drinkColors.length];
-          const canMat = new THREE.MeshStandardMaterial({ color: dColor, metalness: 0.7, roughness: 0.25 });
+    // InstancedMesh for Beverage Cans & Snack Packs inside Cooler (1 Draw Call each)
+    const canGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.16, 8);
+    const canMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.6, roughness: 0.3 });
+    const instancedCoolerCans = new THREE.InstancedMesh(canGeo, canMat, 36);
+    instancedCoolerCans.castShadow = false;
+    instancedCoolerCans.receiveShadow = false;
 
-          // Front drink cylinder
-          const can1 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.16, 12), canMat);
-          can1.position.set(rx, dy + 0.09, 0.18);
-          coolerGroup.add(can1);
-
-          // Back drink cylinder
-          const can2 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.16, 12), canMat);
-          can2.position.set(rx, dy + 0.09, 0.02);
-          coolerGroup.add(can2);
+    const canDummy = new THREE.Object3D();
+    let canIdx = 0;
+    const canColors = [0xef4444, 0xeab308, 0x10b981, 0x3b82f6, 0x0284c7];
+    [1.22, 1.62].forEach((dy) => {
+      for (let rx = -0.48; rx <= 0.48; rx += 0.16) {
+        if (canIdx < 36) {
+          canDummy.position.set(rx, dy + 0.09, 0.18);
+          canDummy.updateMatrix();
+          instancedCoolerCans.setMatrixAt(canIdx, canDummy.matrix);
+          const cColor = new THREE.Color(canColors[canIdx % canColors.length]);
+          instancedCoolerCans.setColorAt(canIdx, cColor);
+          canIdx++;
         }
-      } else if (shelfIdx === 1) {
-        // 2nd shelf: Small rectangular boxes representing instant noodles and snack packs
-        for (let rx = -0.46; rx <= 0.46; rx += 0.18) {
-          const bColor = snackBoxColors[Math.floor(Math.abs(rx * 7)) % snackBoxColors.length];
-          const boxMat = new THREE.MeshStandardMaterial({ color: bColor, roughness: 0.4, metalness: 0.1 });
-
-          // Front noodle/snack box
-          const box1 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.13, 0.14), boxMat);
-          box1.position.set(rx, dy + 0.075, 0.16);
-          coolerGroup.add(box1);
-
-          // Back noodle/snack box
-          const box2 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.13, 0.14), boxMat);
-          box2.position.set(rx, dy + 0.075, -0.04);
-          coolerGroup.add(box2);
-        }
-      } else {
-        // Bottom shelf: Combined inventory (sodas and instant noodle boxes)
-        for (let rx = -0.48; rx <= 0.48; rx += 0.16) {
-          if (rx < 0) {
-            const canMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.7, roughness: 0.25 });
-            const can = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.16, 12), canMat);
-            can.position.set(rx, dy + 0.09, 0.12);
-            coolerGroup.add(can);
-          } else {
-            const boxMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.4 });
-            const box = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.13, 0.14), boxMat);
-            box.position.set(rx, dy + 0.075, 0.12);
-            coolerGroup.add(box);
-          }
+        if (canIdx < 36) {
+          canDummy.position.set(rx, dy + 0.09, 0.02);
+          canDummy.updateMatrix();
+          instancedCoolerCans.setMatrixAt(canIdx, canDummy.matrix);
+          const cColor = new THREE.Color(canColors[(canIdx + 2) % canColors.length]);
+          instancedCoolerCans.setColorAt(canIdx, cColor);
+          canIdx++;
         }
       }
     });
+    instancedCoolerCans.instanceMatrix.needsUpdate = true;
+    if (instancedCoolerCans.instanceColor) instancedCoolerCans.instanceColor.needsUpdate = true;
+    coolerGroup.add(instancedCoolerCans);
+
+    const coolerBoxGeo = new THREE.BoxGeometry(0.12, 0.13, 0.14);
+    const coolerBoxMat = new THREE.MeshStandardMaterial({ color: 0xec4899, roughness: 0.5 });
+    const instancedCoolerBoxes = new THREE.InstancedMesh(coolerBoxGeo, coolerBoxMat, 20);
+    instancedCoolerBoxes.castShadow = false;
+    instancedCoolerBoxes.receiveShadow = false;
+
+    const boxDummy = new THREE.Object3D();
+    let boxIdx = 0;
+    const boxColors = [0xec4899, 0x1e293b, 0x10b981, 0xf59e0b];
+    // Shelf 2 & bottom shelf
+    [0.82, 0.42].forEach((dy) => {
+      for (let rx = -0.46; rx <= 0.46; rx += 0.18) {
+        if (boxIdx < 20) {
+          boxDummy.position.set(rx, dy + 0.075, 0.14);
+          boxDummy.updateMatrix();
+          instancedCoolerBoxes.setMatrixAt(boxIdx, boxDummy.matrix);
+          instancedCoolerBoxes.setColorAt(boxIdx, new THREE.Color(boxColors[boxIdx % boxColors.length]));
+          boxIdx++;
+        }
+      }
+    });
+    instancedCoolerBoxes.instanceMatrix.needsUpdate = true;
+    if (instancedCoolerBoxes.instanceColor) instancedCoolerBoxes.instanceColor.needsUpdate = true;
+    coolerGroup.add(instancedCoolerBoxes);
 
     scene.add(coolerGroup);
 
